@@ -1,6 +1,8 @@
 package console.common;
 
 import console.exception.ConsoleMessageException;
+import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -13,6 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -628,11 +631,14 @@ public class ContractClassFactory {
         return eventSet;
     }
 
-    public static void printEventLogByNameAndIndex(int index, String eventName, List<Object> result)
-            throws IllegalAccessException {
+    public static Map<String, Object> printEventLogByNameAndIndex(
+            int index, String eventName, List<Object> result) throws IllegalAccessException {
+
+        Map<String, Object> logs = new LinkedHashMap<>();
+        logs.put(eventName + " index", index);
+
         Object obj = result.get(index);
         Field[] fields = obj.getClass().getFields();
-        System.out.println(eventName + " index: " + index);
         for (Field field : fields) {
             String varName = field.getName();
             if (!"log".equals(varName)) {
@@ -650,15 +656,16 @@ public class ContractClassFactory {
                             resultList.add(listObj);
                         }
                     }
-                    System.out.println(varName + " = " + resultList);
+                    logs.put(varName, resultList.toString());
                 } else if (varObj.getClass() == byte[].class) {
                     byte[] b = (byte[]) varObj;
-                    System.out.println(varName + " = " + new String(b).trim());
+                    logs.put(varName, new String(b).trim());
                 } else {
-                    System.out.println(varName + " = " + varObj);
+                    logs.put(varName, varObj);
                 }
             }
         }
+        return logs;
     }
 
     public static void printEventLogs(
@@ -666,9 +673,10 @@ public class ContractClassFactory {
             throws IllegalAccessException, ConsoleMessageException, InvocationTargetException {
         Set<Event> events = ContractClassFactory.parseEvent(contractObject, receipt);
         if (events.size() != 0) {
-            ConsoleUtils.singleLine();
-            System.out.println("Event logs");
-            ConsoleUtils.singleLine();
+            AsciiTable table = new AsciiTable();
+            table.addRule();
+            table.addRow(null, "Event logs");
+
             for (Event event : events) {
                 String eventName = event.getName();
                 String funcEventName =
@@ -689,10 +697,25 @@ public class ContractClassFactory {
                     throw new ConsoleMessageException("The " + eventName + " event is empty.");
                 }
                 for (int i = 0; i < eventsResults.size(); i++) {
-                    ContractClassFactory.printEventLogByNameAndIndex(i, eventName, eventsResults);
+                    Map<String, Object> logs =
+                            ContractClassFactory.printEventLogByNameAndIndex(
+                                    i, eventName, eventsResults);
+                    Set<String> keys = logs.keySet();
+                    for (String key : keys) {
+                        table.addRule();
+                        if (key.contains("index")) {
+                            table.addRow(null, key + " " + logs.get(key));
+                        } else {
+                            table.addRow(key, logs.get(key));
+                        }
+                    }
                 }
             }
-            ConsoleUtils.singleLine();
+            table.addRule();
+            table.getContext().setWidth(60);
+            table.setTextAlignment(TextAlignment.CENTER);
+            String tableRender = table.render();
+            System.out.println(tableRender);
         }
     }
 

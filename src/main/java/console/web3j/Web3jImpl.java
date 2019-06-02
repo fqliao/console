@@ -7,11 +7,16 @@ import console.common.ConsoleUtils;
 import console.common.ContractClassFactory;
 import console.common.HelpInfo;
 import console.exception.ConsoleMessageException;
+import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.fisco.bcos.web3j.crypto.Credentials;
 import org.fisco.bcos.web3j.protocol.ObjectMapperFactory;
 import org.fisco.bcos.web3j.protocol.Web3j;
@@ -465,24 +470,47 @@ public class Web3jImpl implements Web3jFace {
                 if (result.size() == 0) {
                     throw new ConsoleMessageException("The event is empty.");
                 }
+                Map<String, Object> logs = new HashMap<>();
+                AsciiTable table = new AsciiTable();
+                table.addRule();
+                table.addRow(null, "Event logs");
                 if (index == -1) {
-                    ConsoleUtils.singleLine();
-                    System.out.println("Event logs");
-                    ConsoleUtils.singleLine();
                     for (int i = 0; i < result.size(); i++) {
-                        ContractClassFactory.printEventLogByNameAndIndex(i, eventName, result);
+                        logs =
+                                ContractClassFactory.printEventLogByNameAndIndex(
+                                        i, eventName, result);
+                        Set<String> keys = logs.keySet();
+                        for (String key : keys) {
+                            table.addRule();
+                            if (key.contains("index")) {
+                                table.addRow(null, key + " " + logs.get(key));
+                            } else {
+                                table.addRow(key, logs.get(key));
+                            }
+                        }
                     }
-                    ConsoleUtils.singleLine();
                 } else {
                     if (index >= result.size()) {
                         throw new ConsoleMessageException("The event index is greater event size.");
                     }
-                    ConsoleUtils.singleLine();
-                    System.out.println("Event logs");
-                    ConsoleUtils.singleLine();
-                    ContractClassFactory.printEventLogByNameAndIndex(index, eventName, result);
-                    ConsoleUtils.singleLine();
+                    logs =
+                            ContractClassFactory.printEventLogByNameAndIndex(
+                                    index, eventName, result);
+                    Set<String> keys = logs.keySet();
+                    for (String key : keys) {
+                        table.addRule();
+                        if (key.contains("index")) {
+                            table.addRow(null, key + " " + logs.get(key));
+                        } else {
+                            table.addRow(key, logs.get(key));
+                        }
+                    }
                 }
+                table.addRule();
+                table.getContext().setWidth(60);
+                table.setTextAlignment(TextAlignment.CENTER);
+                String tableRender = table.render();
+                System.out.println(tableRender);
             } else {
                 ContractClassFactory.printEventLogs(contractObject, methods, receipt);
             }

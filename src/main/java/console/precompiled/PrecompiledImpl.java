@@ -7,6 +7,8 @@ import console.common.ConsoleUtils;
 import console.common.HelpInfo;
 import console.common.TableInfo;
 import console.exception.ConsoleMessageException;
+import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -486,11 +488,30 @@ public class PrecompiledImpl implements PrecompiledFace {
             }
             result = filterSystemColum(result);
             if ("*".equals(selectColumns.get(0))) {
-                result.stream().forEach(System.out::println);
+                selectColumns.clear();
+                selectColumns.add(descTable.getKey());
+                String[] valueArr = descTable.getValueFields().split(",");
+                selectColumns.addAll(Arrays.asList(valueArr));
+                result = getSeletedColumn(selectColumns, result);
                 rows = result.size();
             } else {
-                List<Map<String, String>> selectedResult = getSeletedColumn(selectColumns, result);
-                rows = selectedResult.size();
+                result = getSeletedColumn(selectColumns, result);
+                rows = result.size();
+            }
+            if (rows > 0) {
+                AsciiTable asciiTable = new AsciiTable();
+                asciiTable.addRule();
+                Set<String> keySet = result.get(0).keySet();
+                asciiTable.addRow(keySet);
+                for (Map<String, String> item : result) {
+                    asciiTable.addRule();
+                    asciiTable.addRow(item.values());
+                }
+                asciiTable.addRule();
+                asciiTable.getContext().setWidth(25 * keySet.size());
+                asciiTable.setTextAlignment(TextAlignment.CENTER);
+                String tableRender = asciiTable.render();
+                System.out.println(tableRender);
             }
             if (rows == 1) {
                 System.out.println(rows + " row in set.");
@@ -519,7 +540,6 @@ public class PrecompiledImpl implements PrecompiledFace {
             }
             selectedResult.add(selectedRecords);
         }
-        selectedResult.stream().forEach(System.out::println);
         return selectedResult;
     }
 

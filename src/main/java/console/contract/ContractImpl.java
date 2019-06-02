@@ -6,9 +6,8 @@ import console.common.ConsoleUtils;
 import console.common.ContractClassFactory;
 import console.common.HelpInfo;
 import console.exception.ConsoleMessageException;
-import io.bretty.console.table.Alignment;
-import io.bretty.console.table.ColumnFormatter;
-import io.bretty.console.table.Table;
+import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -598,18 +597,19 @@ public class ContractImpl implements ContractFace {
             System.out.println();
             return;
         }
-        ConsoleUtils.singleLine();
-        String[] headers = {"version", "address"};
+        AsciiTable table = new AsciiTable();
+        table.addRule();
+        table.addRow("version", "address");
         int size = cnsInfos.size();
-        String[][] data = new String[size][2];
         for (int i = 0; i < size; i++) {
-            data[i][0] = cnsInfos.get(i).getVersion();
-            data[i][1] = cnsInfos.get(i).getAddress();
+            table.addRule();
+            table.addRow(cnsInfos.get(i).getVersion(), cnsInfos.get(i).getAddress());
         }
-        ColumnFormatter<String> cf = ColumnFormatter.text(Alignment.CENTER, 45);
-        Table table = Table.of(headers, data, cf);
-        System.out.println(table);
-        ConsoleUtils.singleLine();
+        table.addRule();
+        table.getContext().setWidth(92);
+        table.setTextAlignment(TextAlignment.CENTER);
+        String tableRender = table.render();
+        System.out.println(tableRender);
         System.out.println();
     }
 }

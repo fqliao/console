@@ -3,9 +3,8 @@ package console.precompiled.permission;
 import console.common.Address;
 import console.common.ConsoleUtils;
 import console.common.HelpInfo;
-import io.bretty.console.table.Alignment;
-import io.bretty.console.table.ColumnFormatter;
-import io.bretty.console.table.Table;
+import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import java.util.List;
 import org.fisco.bcos.web3j.crypto.Credentials;
 import org.fisco.bcos.web3j.precompile.permission.PermissionInfo;
@@ -437,18 +436,20 @@ public class PermissionImpl implements PermissionFace {
             System.out.println();
             return;
         }
-        ConsoleUtils.singleLine();
-        String[] headers = {"address", "enable_num"};
+        AsciiTable table = new AsciiTable();
+        table.addRule();
+        table.addRow("address", "enable_num");
         int size = permissionInfos.size();
-        String[][] data = new String[size][2];
         for (int i = 0; i < size; i++) {
-            data[i][0] = permissionInfos.get(i).getAddress();
-            data[i][1] = permissionInfos.get(i).getEnableNum();
+            table.addRule();
+            table.addRow(
+                    permissionInfos.get(i).getAddress(), permissionInfos.get(i).getEnableNum());
         }
-        ColumnFormatter<String> cf = ColumnFormatter.text(Alignment.CENTER, 45);
-        Table table = Table.of(headers, data, cf);
-        System.out.println(table);
-        ConsoleUtils.singleLine();
+        table.addRule();
+        table.getContext().setWidth(90);
+        table.setTextAlignment(TextAlignment.CENTER);
+        String tableRender = table.render();
+        System.out.println(tableRender);
         System.out.println();
     }
 }
